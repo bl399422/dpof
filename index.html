@@ -31,7 +31,7 @@
 		}
 
 		main {
-			width: min(680px, calc(100% - 32px));
+			width: min(820px, calc(100% - 32px));
 			margin: 0 auto;
 			padding: clamp(32px, 8vh, 76px) 0 48px;
 		}
@@ -54,13 +54,13 @@
 		input {
 			width: 100%;
 			min-width: 0;
-			height: 52px;
+			height: 46px;
 			padding: 0 15px;
 			border: 1px solid var(--line);
 			border-radius: 4px;
 			background: var(--surface);
 			color: var(--ink);
-			font: 600 1.1rem/1 "Trebuchet MS", "Segoe UI", sans-serif;
+			font: 600 1rem/1 "Trebuchet MS", "Segoe UI", sans-serif;
 			letter-spacing: 0.08em;
 		}
 
@@ -83,6 +83,8 @@
 
 		button:hover { background: var(--green-dark); }
 		button:active { transform: translateY(1px); }
+		button:disabled { cursor: not-allowed; opacity: 0.55; }
+		button:disabled:hover { background: inherit; }
 
 		.hint, .status {
 			min-height: 1.4em;
@@ -93,29 +95,61 @@
 
 		.status.error { color: var(--coral); }
 
-		.toolbar {
+		.toolbar, .section-actions, .number-actions {
 			display: flex;
 			flex-wrap: wrap;
 			gap: 9px;
-			margin-bottom: 24px;
 		}
 
-		.toolbar button.secondary {
+		.toolbar { margin-bottom: 24px; }
+
+		button.secondary {
 			border-color: var(--line);
 			background: var(--surface);
 			color: var(--ink);
 		}
 
-		.toolbar button.secondary:hover { background: #e9eee5; }
+		button.secondary:hover { background: #e9eee5; }
+
+		button.danger {
+			border-color: #e8bbb1;
+			background: #fff8f5;
+			color: #8f3327;
+		}
+
+		button.danger:hover { background: #f9e7e1; }
+
+		button.small {
+			min-height: 34px;
+			padding: 0 10px;
+			font-size: 0.78rem;
+		}
+
+		#createSectionForm { max-width: 480px; }
+
+		.sections {
+			display: grid;
+			gap: 18px;
+		}
+
+		.list-section {
+			padding: 18px;
+			border: 1px solid var(--line);
+			border-radius: 5px;
+			background: var(--surface);
+		}
 
 		.section-heading {
 			display: flex;
-			align-items: baseline;
+			align-items: center;
 			justify-content: space-between;
 			gap: 12px;
 			padding-bottom: 9px;
 			border-bottom: 1px solid var(--line);
 		}
+
+		.section-heading h2 { overflow-wrap: anywhere; }
+		.section-actions { justify-content: flex-end; }
 
 		h2 {
 			margin: 0;
@@ -131,20 +165,45 @@
 			font-variant-numeric: tabular-nums;
 		}
 
-		ol {
+		.number-list {
 			display: grid;
-			grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-			gap: 0 18px;
-			margin: 0;
-			padding: 8px 0 4px 28px;
-			font: 1rem/2 "Courier New", monospace;
+			gap: 6px;
+			margin: 12px 0 18px;
+			padding: 0;
+			list-style: none;
+			counter-reset: number;
+		}
+
+		.number-row {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 10px;
+			min-height: 38px;
+			padding: 4px 8px;
+			border-bottom: 1px solid #edf0e9;
+			counter-increment: number;
+		}
+
+		.number-row::before {
+			content: counter(number) ".";
+			min-width: 22px;
+			color: var(--muted);
+			font: 0.8rem "Trebuchet MS", "Segoe UI", sans-serif;
+		}
+
+		.number-value {
+			font: 1rem "Courier New", monospace;
 			font-variant-numeric: tabular-nums;
 		}
 
-		li { padding-left: 5px; }
+		.number-actions { flex-shrink: 0; }
+		.number-edit-form { flex: 1; margin: 0; }
+		.number-edit-form input { max-width: 220px; }
+		.add-number-form { max-width: 400px; margin: 14px 0 0; }
 
 		.empty {
-			margin: 18px 0 24px;
+			margin: 14px 0;
 			color: var(--muted);
 			font-size: 0.92rem;
 		}
@@ -156,27 +215,39 @@
 		}
 
 		#duplicateList {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 8px;
+			display: grid;
+			gap: 10px;
 			margin: 14px 0 0;
 			padding: 0;
 			list-style: none;
 		}
 
-		#duplicateList li {
-			padding: 5px 10px;
+		.duplicate-entry {
+			padding: 10px 12px;
 			border: 1px solid #e8bbb1;
 			border-radius: 3px;
 			background: #fff8f5;
 			color: #8f3327;
-			font: 700 0.95rem/1.3 "Courier New", monospace;
+		}
+
+		.duplicate-number {
+			font: 700 0.95rem "Courier New", monospace;
+		}
+
+		.duplicate-locations {
+			margin: 6px 0 0;
+			padding-left: 20px;
+			color: var(--ink);
+			font-size: 0.85rem;
 		}
 
 		@media (max-width: 460px) {
 			form { gap: 7px; }
 			input { padding: 0 10px; }
 			.toolbar button { flex: 1; padding: 0 12px; }
+			.list-section { padding: 13px; }
+			.section-heading { align-items: flex-start; flex-direction: column; }
+			.section-actions { justify-content: flex-start; }
 		}
 	</style>
 </head>
@@ -184,112 +255,428 @@
 	<main>
 		<h1>Duplicate PO Finder</h1>
 
-		<form id="numberForm" novalidate>
-			<input id="numberInput" type="text" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" aria-label="Six-digit number" placeholder="000000">
+		<p class="hint" id="status" role="status" aria-live="polite">Default sections are ready. Add six-digit numbers; your data is saved in this browser.</p>
+
+		<form id="createSectionForm" novalidate>
+			<input id="sectionNameInput" type="text" maxlength="60" aria-label="New section name" placeholder="New section name" required>
+			<button type="submit">Add section</button>
 		</form>
-		<p class="hint" id="status" role="status" aria-live="polite">Type a number and press Enter to add it.</p>
 
 		<div class="toolbar" aria-label="List actions">
-			<button id="sortButton" type="button">Sort</button>
-			<button id="duplicatesButton" class="secondary" type="button">Find duplicates</button>
+			<button id="duplicatesButton" type="button">Find duplicates</button>
+			<button id="clearNumbersButton" class="danger" type="button">Clear all numbers</button>
 		</div>
 
-		<section aria-labelledby="listHeading">
-			<div class="section-heading">
-				<h2 id="listHeading">Numbers</h2>
-				<span class="count" id="numberCount">0 entries</span>
-			</div>
-			<p class="empty" id="emptyMessage">Your numbers will appear here, one per line.</p>
-			<ol id="numberList"></ol>
-		</section>
+		<div id="sections" class="sections" aria-label="Number sections"></div>
 
 		<section class="duplicates" aria-labelledby="duplicateHeading" aria-live="polite">
 			<div class="section-heading">
 				<h2 id="duplicateHeading">Duplicates</h2>
 				<span class="count" id="duplicateCount">Not checked</span>
 			</div>
-			<p class="empty" id="duplicateEmpty">Choose “Find duplicates” to check the list.</p>
+			<p class="empty" id="duplicateEmpty">Choose “Find duplicates” to check all sections.</p>
 			<ul id="duplicateList"></ul>
 		</section>
 	</main>
 
 	<script>
-		const form = document.querySelector("#numberForm");
-		const input = document.querySelector("#numberInput");
 		const status = document.querySelector("#status");
-		const numberList = document.querySelector("#numberList");
-		const numberCount = document.querySelector("#numberCount");
-		const emptyMessage = document.querySelector("#emptyMessage");
+		const sectionsContainer = document.querySelector("#sections");
 		const duplicateList = document.querySelector("#duplicateList");
 		const duplicateCount = document.querySelector("#duplicateCount");
 		const duplicateEmpty = document.querySelector("#duplicateEmpty");
-		const numbers = [];
+		const storageKey = "duplicate-po-finder-sections";
+		const defaultSectionNames = [
+			"A", "B", "C", "D", "E", "F", "G", "Grainger", "H", "I", "J", "K", "L",
+			"M", "N", "O", "P", "Q", "R", "S", "State Electric", "T", "U", "Worly", "VWXYZ"
+		];
+		let sections = [];
 		let duplicatesChecked = false;
+		let editingNumber = null;
+		let storageLoadFailed = false;
 
-		function renderNumbers() {
-			numberList.replaceChildren(...numbers.map((number) => {
-				const item = document.createElement("li");
-				item.textContent = number;
-				return item;
-			}));
-			numberCount.textContent = `${numbers.length} ${numbers.length === 1 ? "entry" : "entries"}`;
-			emptyMessage.hidden = numbers.length > 0;
+		function setStatus(message, isError = false) {
+			status.textContent = message;
+			status.classList.toggle("error", isError);
 		}
 
-		function renderDuplicates() {
-			if (!duplicatesChecked) return;
-			const seen = new Set();
-			const duplicates = new Set();
-			for (const number of numbers) {
-				if (seen.has(number)) duplicates.add(number);
-				seen.add(number);
+		function isValidSections(value) {
+			return Array.isArray(value) && !value.some((section) =>
+				!section || typeof section.id !== "string" ||
+				typeof section.name !== "string" || !Array.isArray(section.numbers) ||
+				section.numbers.some((number) => typeof number !== "string" || !/^\d{6}$/.test(number))
+			);
+		}
+
+		function loadSections() {
+			try {
+				const saved = localStorage.getItem(storageKey);
+				if (saved === null) {
+					const defaults = createDefaultSections();
+					localStorage.setItem(storageKey, JSON.stringify({ version: 2, sections: defaults }));
+					return defaults;
+				}
+				const parsed = JSON.parse(saved);
+				if (Array.isArray(parsed)) {
+					if (!isValidSections(parsed)) throw new Error("Saved data has an unexpected format.");
+					const migrated = parsed.length ? parsed : createDefaultSections();
+					localStorage.setItem(storageKey, JSON.stringify({ version: 2, sections: migrated }));
+					return migrated;
+				}
+				if (!parsed || parsed.version !== 2 || !isValidSections(parsed.sections)) {
+					throw new Error("Saved data has an unexpected format.");
+				}
+				return parsed.sections;
+			} catch (error) {
+				storageLoadFailed = true;
+				setStatus("Saved data could not be loaded. Use “Clear all numbers” to replace it with empty default sections.", true);
+				return [];
 			}
-			const sortedDuplicates = [...duplicates].sort((a, b) => Number(b) - Number(a));
-			duplicateList.replaceChildren(...sortedDuplicates.map((number) => {
-				const item = document.createElement("li");
-				item.textContent = number;
-				return item;
-			}));
-			duplicateCount.textContent = `${sortedDuplicates.length} found`;
-			duplicateEmpty.hidden = sortedDuplicates.length > 0;
-			duplicateEmpty.textContent = sortedDuplicates.length ? "" : "No duplicate numbers found.";
 		}
 
-		form.addEventListener("submit", (event) => {
-			event.preventDefault();
-			const value = input.value.trim();
-			if (!/^\d{6}$/.test(value)) {
-				status.textContent = "Enter exactly six digits before adding a number.";
-				status.classList.add("error");
-				input.focus();
+		function persistSections(nextSections) {
+			if (storageLoadFailed) {
+				setStatus("Clear the unreadable saved data before making changes.", true);
+				return false;
+			}
+			try {
+				localStorage.setItem(storageKey, JSON.stringify({ version: 2, sections: nextSections }));
+				sections = nextSections;
+				return true;
+			} catch (error) {
+				setStatus("Changes could not be saved in this browser. Check available storage and try again.", true);
+				return false;
+			}
+		}
+
+		function makeButton(label, action, className = "secondary") {
+			const button = document.createElement("button");
+			button.type = "button";
+			button.className = `small ${className}`;
+			button.dataset.action = action;
+			button.textContent = label;
+			return button;
+		}
+
+		function createDefaultSections() {
+			return defaultSectionNames.map((name) => ({ id: createId(), name, numbers: [] }));
+		}
+
+		function renderSections() {
+			sectionsContainer.replaceChildren();
+			document.querySelector("#clearNumbersButton").disabled = !storageLoadFailed &&
+				!sections.some((section) => section.numbers.length > 0);
+			if (!sections.length) {
+				const empty = document.createElement("p");
+				empty.className = "empty";
+				empty.textContent = "No sections yet. Create one above to get started.";
+				sectionsContainer.append(empty);
 				return;
 			}
-			numbers.push(value);
-			input.value = "";
-			status.textContent = `${value} added.`;
-			status.classList.remove("error");
+
+			for (const section of sections) {
+				const card = document.createElement("section");
+				card.className = "list-section";
+				card.dataset.sectionId = section.id;
+
+				const header = document.createElement("div");
+				header.className = "section-heading";
+				const title = document.createElement("h2");
+				title.textContent = section.name;
+				const count = document.createElement("span");
+				count.className = "count";
+				count.textContent = `${section.numbers.length} ${section.numbers.length === 1 ? "number" : "numbers"}`;
+				const heading = document.createElement("div");
+				heading.append(title, count);
+				const actions = document.createElement("div");
+				actions.className = "section-actions";
+				const renameButton = makeButton("Rename", "rename-section");
+				const clearButton = makeButton("Clear numbers", "clear-section", "danger");
+				clearButton.disabled = section.numbers.length === 0;
+				clearButton.setAttribute("aria-label", `Clear numbers in ${section.name}`);
+				actions.append(renameButton, clearButton, makeButton("Delete section", "delete-section", "danger"));
+				header.append(heading, actions);
+
+				const list = document.createElement("ol");
+				list.className = "number-list";
+				section.numbers.forEach((number, index) => {
+					const row = document.createElement("li");
+					row.className = "number-row";
+					row.dataset.numberIndex = index;
+					if (editingNumber && editingNumber.sectionId === section.id && editingNumber.index === index) {
+						const editForm = document.createElement("form");
+						editForm.className = "number-edit-form";
+						editForm.dataset.action = "edit-number";
+						const editInput = document.createElement("input");
+						editInput.name = "number";
+						editInput.type = "text";
+						editInput.inputMode = "numeric";
+						editInput.maxLength = 6;
+						editInput.pattern = "[0-9]{6}";
+						editInput.value = number;
+						editInput.setAttribute("aria-label", `Edit number at position ${index + 1}`);
+						const saveButton = document.createElement("button");
+						saveButton.type = "submit";
+						saveButton.className = "small";
+						saveButton.textContent = "Save";
+						editForm.append(editInput, saveButton, makeButton("Cancel", "cancel-edit"));
+						row.append(editForm);
+					} else {
+						const value = document.createElement("span");
+						value.className = "number-value";
+						value.textContent = number;
+						const numberActions = document.createElement("div");
+						numberActions.className = "number-actions";
+						const editButton = makeButton("Edit", "edit-number");
+						editButton.setAttribute("aria-label", `Edit ${number} at position ${index + 1} in ${section.name}`);
+						const deleteButton = makeButton("Delete", "delete-number", "danger");
+						deleteButton.setAttribute("aria-label", `Delete ${number} at position ${index + 1} in ${section.name}`);
+						numberActions.append(editButton, deleteButton);
+						row.append(value, numberActions);
+					}
+					list.append(row);
+				});
+
+				const empty = document.createElement("p");
+				empty.className = "empty";
+				empty.textContent = "No numbers in this section yet.";
+				empty.hidden = section.numbers.length > 0;
+
+				const addForm = document.createElement("form");
+				addForm.className = "add-number-form";
+				addForm.dataset.action = "add-number";
+				const numberInput = document.createElement("input");
+				numberInput.name = "number";
+				numberInput.type = "text";
+				numberInput.inputMode = "numeric";
+				numberInput.autocomplete = "off";
+				numberInput.maxLength = 6;
+				numberInput.pattern = "[0-9]{6}";
+				numberInput.placeholder = "Six-digit number";
+				numberInput.setAttribute("aria-label", `Add number to ${section.name}`);
+				const addButton = document.createElement("button");
+				addButton.type = "submit";
+				addButton.textContent = "Add number";
+				addForm.append(numberInput, addButton);
+
+				card.append(header, list, empty, addForm);
+				sectionsContainer.append(card);
+			}
+		}
+
+		function resetDuplicateResults() {
 			duplicatesChecked = false;
 			duplicateList.replaceChildren();
 			duplicateCount.textContent = "Not checked";
 			duplicateEmpty.hidden = false;
-			duplicateEmpty.textContent = "Choose “Find duplicates” to check the list.";
-			renderNumbers();
-			input.focus();
+			duplicateEmpty.textContent = "Choose “Find duplicates” to check all sections.";
+		}
+
+		function renderDuplicates() {
+			if (!duplicatesChecked) return;
+			const occurrences = new Map();
+			for (const section of sections) {
+				section.numbers.forEach((number, index) => {
+					if (!occurrences.has(number)) occurrences.set(number, []);
+					occurrences.get(number).push({ section: section.name, position: index + 1 });
+				});
+			}
+
+			const duplicates = [...occurrences.entries()]
+				.filter(([, locations]) => locations.length > 1)
+				.sort(([a], [b]) => Number(b) - Number(a));
+			duplicateList.replaceChildren();
+			for (const [number, locations] of duplicates) {
+				const item = document.createElement("li");
+				item.className = "duplicate-entry";
+				const value = document.createElement("strong");
+				value.className = "duplicate-number";
+				value.textContent = number;
+				const locationList = document.createElement("ul");
+				locationList.className = "duplicate-locations";
+				for (const location of locations) {
+					const locationItem = document.createElement("li");
+					locationItem.textContent = `${location.section} — position ${location.position}`;
+					locationList.append(locationItem);
+				}
+				item.append(value, locationList);
+				duplicateList.append(item);
+			}
+			duplicateCount.textContent = `${duplicates.length} ${duplicates.length === 1 ? "duplicate" : "duplicates"} found`;
+			duplicateEmpty.hidden = duplicates.length > 0;
+			duplicateEmpty.textContent = "No duplicate numbers found.";
+		}
+
+		function createId() {
+			return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+		}
+
+		function getSection(sectionId) {
+			return sections.find((section) => section.id === sectionId);
+		}
+
+		document.querySelector("#createSectionForm").addEventListener("submit", (event) => {
+			event.preventDefault();
+			const input = document.querySelector("#sectionNameInput");
+			const name = input.value.trim();
+			if (!name) {
+				setStatus("Enter a name for the section.", true);
+				input.focus();
+				return;
+			}
+			if (sections.some((section) => section.name.toLowerCase() === name.toLowerCase())) {
+				setStatus("Section names must be unique.", true);
+				input.focus();
+				return;
+			}
+			if (persistSections([...sections, { id: createId(), name, numbers: [] }])) {
+				input.value = "";
+				renderSections();
+				resetDuplicateResults();
+				setStatus(`Section “${name}” created.`);
+			}
 		});
 
-		document.querySelector("#sortButton").addEventListener("click", () => {
-			numbers.sort((a, b) => Number(b) - Number(a));
-			renderNumbers();
-			status.textContent = "Numbers sorted from greatest to smallest.";
-			status.classList.remove("error");
+		sectionsContainer.addEventListener("submit", (event) => {
+			const form = event.target;
+			const action = form.dataset.action;
+			if (!action) return;
+			event.preventDefault();
+			const card = form.closest("[data-section-id]");
+			const section = getSection(card.dataset.sectionId);
+			const input = form.elements.namedItem("number");
+			const value = input.value.trim();
+			if (!/^\d{6}$/.test(value)) {
+				setStatus("Enter exactly six digits.", true);
+				input.focus();
+				return;
+			}
+
+			const sectionIndex = sections.findIndex((entry) => entry.id === section.id);
+			const nextSections = sections.map((entry) => ({ ...entry, numbers: [...entry.numbers] }));
+			if (action === "add-number") {
+				nextSections[sectionIndex].numbers.push(value);
+			} else {
+				const index = Number(form.closest("[data-number-index]").dataset.numberIndex);
+				nextSections[sectionIndex].numbers[index] = value;
+			}
+			if (persistSections(nextSections)) {
+				editingNumber = null;
+				renderSections();
+				resetDuplicateResults();
+				setStatus(action === "add-number" ? `${value} added to “${section.name}”.` : `Number updated in “${section.name}”.`);
+			}
+		});
+
+		sectionsContainer.addEventListener("click", (event) => {
+			const button = event.target.closest("button[data-action]");
+			if (!button) return;
+			const action = button.dataset.action;
+			const card = button.closest("[data-section-id]");
+			const section = getSection(card.dataset.sectionId);
+			if (!section) return;
+
+			if (action === "rename-section") {
+				const name = prompt("Rename section:", section.name);
+				if (name === null) return;
+				const trimmedName = name.trim();
+				if (!trimmedName) {
+					setStatus("Section names cannot be empty.", true);
+					return;
+				}
+				if (trimmedName.length > 60) {
+					setStatus("Section names must be 60 characters or fewer.", true);
+					return;
+				}
+				if (sections.some((entry) => entry.id !== section.id && entry.name.toLowerCase() === trimmedName.toLowerCase())) {
+					setStatus("Section names must be unique.", true);
+					return;
+				}
+				const nextSections = sections.map((entry) => entry.id === section.id ? { ...entry, name: trimmedName } : entry);
+				if (persistSections(nextSections)) {
+					renderSections();
+					resetDuplicateResults();
+					setStatus(`Section renamed to “${trimmedName}”.`);
+				}
+			} else if (action === "delete-section") {
+				if (!confirm(`Delete “${section.name}” and all its numbers?`)) return;
+				if (persistSections(sections.filter((entry) => entry.id !== section.id))) {
+					editingNumber = null;
+					renderSections();
+					resetDuplicateResults();
+					setStatus(`Section “${section.name}” deleted.`);
+				}
+			} else if (action === "clear-section") {
+				if (!section.numbers.length) return;
+				if (!confirm(`Clear all numbers from “${section.name}”? The section will be kept.`)) return;
+				const nextSections = sections.map((entry) =>
+					entry.id === section.id ? { ...entry, numbers: [] } : entry
+				);
+				if (persistSections(nextSections)) {
+					editingNumber = null;
+					renderSections();
+					resetDuplicateResults();
+					setStatus(`Numbers cleared from “${section.name}”.`);
+				}
+			} else if (action === "edit-number") {
+				editingNumber = { sectionId: section.id, index: Number(button.closest("[data-number-index]").dataset.numberIndex) };
+				renderSections();
+				sectionsContainer.querySelector(".number-edit-form input").focus();
+			} else if (action === "cancel-edit") {
+				editingNumber = null;
+				renderSections();
+			} else if (action === "delete-number") {
+				const index = Number(button.closest("[data-number-index]").dataset.numberIndex);
+				const nextSections = sections.map((entry) => ({ ...entry, numbers: [...entry.numbers] }));
+				nextSections.find((entry) => entry.id === section.id).numbers.splice(index, 1);
+				if (persistSections(nextSections)) {
+					renderSections();
+					resetDuplicateResults();
+					setStatus(`Number deleted from “${section.name}”.`);
+				}
+			}
 		});
 
 		document.querySelector("#duplicatesButton").addEventListener("click", () => {
+			if (storageLoadFailed) {
+				setStatus("Saved data could not be read. Clear it before checking for duplicates.", true);
+				return;
+			}
 			duplicatesChecked = true;
 			renderDuplicates();
-			status.textContent = "Duplicate check complete.";
-			status.classList.remove("error");
+			setStatus("Duplicate check complete.");
 		});
+
+		document.querySelector("#clearNumbersButton").addEventListener("click", () => {
+			if (storageLoadFailed) {
+				if (!confirm("Saved data could not be read. Replace it with empty default sections?")) return;
+				const defaults = createDefaultSections();
+				try {
+					localStorage.setItem(storageKey, JSON.stringify({ version: 2, sections: defaults }));
+					sections = defaults;
+					storageLoadFailed = false;
+					renderSections();
+					resetDuplicateResults();
+					setStatus("Unreadable saved data replaced with empty default sections.");
+				} catch (error) {
+					setStatus("Saved data could not be replaced in this browser.", true);
+				}
+				return;
+			}
+
+			if (!sections.some((section) => section.numbers.length > 0)) return;
+			if (!confirm("Clear all numbers from every section? Section names will be kept.")) return;
+			const nextSections = sections.map((section) => ({ ...section, numbers: [] }));
+			if (persistSections(nextSections)) {
+				editingNumber = null;
+				renderSections();
+				resetDuplicateResults();
+				setStatus("All numbers cleared. Sections and their names were kept.");
+			}
+		});
+
+		sections = loadSections();
+		renderSections();
 	</script>
 </body>
 </html>
