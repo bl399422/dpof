@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Duplicate PO Finder</title>
+	<style>
+		:root {
+			color-scheme: light;
+			--ink: #202820;
+			--muted: #647064;
+			--paper: #f5f6ef;
+			--surface: #fff;
+			--line: #d7ddd2;
+			--green: #245c43;
+			--green-dark: #194430;
+			--coral: #b74635;
+			--focus: #e5a84b;
+		}
+
+		* { box-sizing: border-box; }
+
+		body {
+			margin: 0;
+			min-height: 100vh;
+			background-color: var(--paper);
+			background-image: radial-gradient(#dfe4d8 0.7px, transparent 0.7px);
+			background-size: 15px 15px;
+			color: var(--ink);
+			font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+		}
+
+		main {
+			width: min(680px, calc(100% - 32px));
+			margin: 0 auto;
+			padding: clamp(32px, 8vh, 76px) 0 48px;
+		}
+
+		h1 {
+			margin: 0 0 30px;
+			font-family: Georgia, "Times New Roman", serif;
+			font-size: clamp(2.4rem, 8vw, 4rem);
+			font-weight: 500;
+			line-height: 1;
+		}
+
+		form {
+			display: flex;
+			gap: 10px;
+			align-items: stretch;
+			margin-bottom: 10px;
+		}
+
+		input {
+			width: 100%;
+			min-width: 0;
+			height: 52px;
+			padding: 0 15px;
+			border: 1px solid var(--line);
+			border-radius: 4px;
+			background: var(--surface);
+			color: var(--ink);
+			font: 600 1.1rem/1 "Trebuchet MS", "Segoe UI", sans-serif;
+			letter-spacing: 0.08em;
+		}
+
+		input:focus-visible, button:focus-visible {
+			outline: 3px solid var(--focus);
+			outline-offset: 2px;
+		}
+
+		button {
+			min-height: 46px;
+			padding: 0 18px;
+			border: 1px solid var(--green);
+			border-radius: 4px;
+			background: var(--green);
+			color: #fff;
+			font: 700 0.92rem/1 "Trebuchet MS", "Segoe UI", sans-serif;
+			cursor: pointer;
+			transition: background-color 140ms ease, transform 140ms ease;
+		}
+
+		button:hover { background: var(--green-dark); }
+		button:active { transform: translateY(1px); }
+
+		.hint, .status {
+			min-height: 1.4em;
+			margin: 0 0 20px;
+			color: var(--muted);
+			font-size: 0.85rem;
+		}
+
+		.status.error { color: var(--coral); }
+
+		.toolbar {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 9px;
+			margin-bottom: 24px;
+		}
+
+		.toolbar button.secondary {
+			border-color: var(--line);
+			background: var(--surface);
+			color: var(--ink);
+		}
+
+		.toolbar button.secondary:hover { background: #e9eee5; }
+
+		.section-heading {
+			display: flex;
+			align-items: baseline;
+			justify-content: space-between;
+			gap: 12px;
+			padding-bottom: 9px;
+			border-bottom: 1px solid var(--line);
+		}
+
+		h2 {
+			margin: 0;
+			font-size: 0.88rem;
+			font-weight: 800;
+			letter-spacing: 0.06em;
+			text-transform: uppercase;
+		}
+
+		.count {
+			color: var(--muted);
+			font-size: 0.82rem;
+			font-variant-numeric: tabular-nums;
+		}
+
+		ol {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+			gap: 0 18px;
+			margin: 0;
+			padding: 8px 0 4px 28px;
+			font: 1rem/2 "Courier New", monospace;
+			font-variant-numeric: tabular-nums;
+		}
+
+		li { padding-left: 5px; }
+
+		.empty {
+			margin: 18px 0 24px;
+			color: var(--muted);
+			font-size: 0.92rem;
+		}
+
+		.duplicates {
+			margin-top: 24px;
+			padding-top: 17px;
+			border-top: 1px solid var(--line);
+		}
+
+		#duplicateList {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+			margin: 14px 0 0;
+			padding: 0;
+			list-style: none;
+		}
+
+		#duplicateList li {
+			padding: 5px 10px;
+			border: 1px solid #e8bbb1;
+			border-radius: 3px;
+			background: #fff8f5;
+			color: #8f3327;
+			font: 700 0.95rem/1.3 "Courier New", monospace;
+		}
+
+		@media (max-width: 460px) {
+			form { gap: 7px; }
+			input { padding: 0 10px; }
+			.toolbar button { flex: 1; padding: 0 12px; }
+		}
+	</style>
+</head>
+<body>
+	<main>
+		<h1>Duplicate PO Finder</h1>
+
+		<form id="numberForm" novalidate>
+			<input id="numberInput" type="text" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" aria-label="Six-digit number" placeholder="000000">
+		</form>
+		<p class="hint" id="status" role="status" aria-live="polite">Type a number and press Enter to add it.</p>
+
+		<div class="toolbar" aria-label="List actions">
+			<button id="sortButton" type="button">Sort</button>
+			<button id="duplicatesButton" class="secondary" type="button">Find duplicates</button>
+		</div>
+
+		<section aria-labelledby="listHeading">
+			<div class="section-heading">
+				<h2 id="listHeading">Numbers</h2>
+				<span class="count" id="numberCount">0 entries</span>
+			</div>
+			<p class="empty" id="emptyMessage">Your numbers will appear here, one per line.</p>
+			<ol id="numberList"></ol>
+		</section>
+
+		<section class="duplicates" aria-labelledby="duplicateHeading" aria-live="polite">
+			<div class="section-heading">
+				<h2 id="duplicateHeading">Duplicates</h2>
+				<span class="count" id="duplicateCount">Not checked</span>
+			</div>
+			<p class="empty" id="duplicateEmpty">Choose “Find duplicates” to check the list.</p>
+			<ul id="duplicateList"></ul>
+		</section>
+	</main>
+
+	<script>
+		const form = document.querySelector("#numberForm");
+		const input = document.querySelector("#numberInput");
+		const status = document.querySelector("#status");
+		const numberList = document.querySelector("#numberList");
+		const numberCount = document.querySelector("#numberCount");
+		const emptyMessage = document.querySelector("#emptyMessage");
+		const duplicateList = document.querySelector("#duplicateList");
+		const duplicateCount = document.querySelector("#duplicateCount");
+		const duplicateEmpty = document.querySelector("#duplicateEmpty");
+		const numbers = [];
+		let duplicatesChecked = false;
+
+		function renderNumbers() {
+			numberList.replaceChildren(...numbers.map((number) => {
+				const item = document.createElement("li");
+				item.textContent = number;
+				return item;
+			}));
+			numberCount.textContent = `${numbers.length} ${numbers.length === 1 ? "entry" : "entries"}`;
+			emptyMessage.hidden = numbers.length > 0;
+		}
+
+		function renderDuplicates() {
+			if (!duplicatesChecked) return;
+			const seen = new Set();
+			const duplicates = new Set();
+			for (const number of numbers) {
+				if (seen.has(number)) duplicates.add(number);
+				seen.add(number);
+			}
+			const sortedDuplicates = [...duplicates].sort((a, b) => Number(b) - Number(a));
+			duplicateList.replaceChildren(...sortedDuplicates.map((number) => {
+				const item = document.createElement("li");
+				item.textContent = number;
+				return item;
+			}));
+			duplicateCount.textContent = `${sortedDuplicates.length} found`;
+			duplicateEmpty.hidden = sortedDuplicates.length > 0;
+			duplicateEmpty.textContent = sortedDuplicates.length ? "" : "No duplicate numbers found.";
+		}
+
+		form.addEventListener("submit", (event) => {
+			event.preventDefault();
+			const value = input.value.trim();
+			if (!/^\d{6}$/.test(value)) {
+				status.textContent = "Enter exactly six digits before adding a number.";
+				status.classList.add("error");
+				input.focus();
+				return;
+			}
+			numbers.push(value);
+			input.value = "";
+			status.textContent = `${value} added.`;
+			status.classList.remove("error");
+			duplicatesChecked = false;
+			duplicateList.replaceChildren();
+			duplicateCount.textContent = "Not checked";
+			duplicateEmpty.hidden = false;
+			duplicateEmpty.textContent = "Choose “Find duplicates” to check the list.";
+			renderNumbers();
+			input.focus();
+		});
+
+		document.querySelector("#sortButton").addEventListener("click", () => {
+			numbers.sort((a, b) => Number(b) - Number(a));
+			renderNumbers();
+			status.textContent = "Numbers sorted from greatest to smallest.";
+			status.classList.remove("error");
+		});
+
+		document.querySelector("#duplicatesButton").addEventListener("click", () => {
+			duplicatesChecked = true;
+			renderDuplicates();
+			status.textContent = "Duplicate check complete.";
+			status.classList.remove("error");
+		});
+	</script>
+</body>
+</html>
